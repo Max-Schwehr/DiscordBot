@@ -144,6 +144,8 @@ async def reaction_status(target_message: discord.Message) -> tuple[str, list[st
     """
 
     reacted_discord_names = set()
+    # Treat the announcement's author as having participated without a reaction.
+    reacted_discord_names.add(target_message.author.name.casefold())
     for reaction in target_message.reactions:
         # The API returns users per emoji, so collect them into one shared set.
         async for user in reaction.users():
