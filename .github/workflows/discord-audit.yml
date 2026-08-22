@@ -1,0 +1,33 @@
+name: Discord audit window
+
+on:
+  schedule:
+    # 8:00 PM Los Angeles during daylight saving time = 3:00 AM UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run bot for 30 minutes
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: |
+          timeout 30m python main.py
+          exit_code=$?
+          if [ "$exit_code" -eq 124 ]; then exit 0; fi
+          exit "$exit_code"
