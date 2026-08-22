@@ -26,6 +26,8 @@ jobs:
       - name: Run bot for 30 minutes
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
           timeout 30m python main.py
           exit_code=$?

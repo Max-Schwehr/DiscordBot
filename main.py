@@ -22,10 +22,10 @@ NOTION_API_VERSION = "2026-03-11"
 
 # STUFF TO CONFIGURE IF NEEDED
 # The channel where users run !audit and receive its report.
-AUDIT_CHANNEL_ID = 1540596699075059763
+AUDIT_CHANNEL_ID = 1540806036666056844
 
 # The channel containing announcement messages that may be audited.
-ANNOUNCEMENT_CHANNEL_ID = 1540548385331875982
+ANNOUNCEMENT_CHANNEL_ID = 1011391665640058934
 
 
 # Track each member by Discord username and show their real name in audit results.
@@ -149,7 +149,8 @@ async def reaction_status(target_message: discord.Message) -> tuple[str, list[st
         async for user in reaction.users():
             reacted_discord_names.add(user.name.casefold())
 
-    lines = [f"Reaction status for [this message]({target_message.jump_url}):"]
+    non_reactor_lines = []
+    reactor_lines = []
     non_reactors = []
     for person in people:
         # Compare normalized usernames so uppercase and lowercase do not matter.
@@ -157,10 +158,15 @@ async def reaction_status(target_message: discord.Message) -> tuple[str, list[st
         status = "✅" if did_react else "❌"
         message = "reacted" if did_react else "did not react"
         line = f'{status} {person["realName"]} {message}.'
-        lines.append(line)
         if not did_react:
+            non_reactor_lines.append(line)
             non_reactors.append(person["realName"])
+        else:
+            reactor_lines.append(line)
 
+    lines = [f"Reaction status for [this message]({target_message.jump_url}):"]
+    lines.extend(non_reactor_lines)
+    lines.extend(reactor_lines)
     return "\n".join(lines), non_reactors
 
 
