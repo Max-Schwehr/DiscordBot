@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Optional
 import requests
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 import discord
 from dotenv import load_dotenv
@@ -22,6 +23,7 @@ NOTION_MEMBERS_DATABASE_ID = os.getenv("NOTION_MEMBERS_DATABASE_ID")
 
 NOTION_API_URL = "https://api.notion.com/v1"
 NOTION_API_VERSION = "2026-03-11"
+LOS_ANGELES_TIME_ZONE = ZoneInfo("America/Los_Angeles")
 
 # STUFF TO CONFIGURE IF NEEDED
 # The channel where users run !audit and receive its report.
@@ -653,7 +655,7 @@ async def announce_today_birthdays() -> None:
     global has_checked_birthdays
 
     # The external scheduler may start the bot twice daily; only the earlier run posts.
-    if has_checked_birthdays or datetime.now().hour >= 16:
+    if has_checked_birthdays or datetime.now(LOS_ANGELES_TIME_ZONE).hour >= 17:
         return
 
     try:
@@ -714,8 +716,16 @@ async def on_ready() -> None:
             raise TypeError("The configured audit channel is not a text channel.")
 
         await channel.send(
-            "Reaction Audits Ready! Use `!audit` followed by a space and the message "
-            "link to check its reactions. "
+            "🤖 Maestro Bot 🤖 is ready!\n"
+            "- To audit a message's reactions, use `!audit`, followed by a space and "
+            "a link to a Discord message in #announcements.\n"
+            "- After running `!audit`, use `!deduct` and/or `!dmthem` (beta). "
+            "`!deduct` adds point deductions in Notion, while `!dmthem` sends "
+            "a private DM to people who did not react.\n"
+            "- If you're logging points for an after-school meeting, run "
+            "`!syncmembers` to fill the Member Object column automatically.\n"
+            "- Birthday announcements are sent at 7:30 AM, when needed. "
+            "Birthdays are listed in the Members database in Notion."
         )
         has_announced_ready = True
     except (discord.DiscordException, TypeError) as error:
