@@ -602,7 +602,15 @@ async def dm_them(ctx: commands.Context) -> None:
         await ctx.send("Could not find the server for the most recently audited message.")
         return
 
-    members, missing_names = await tracked_members(guild, last_reaction_audit.non_reactors)
+    try:
+        members, missing_names = await tracked_members(
+            guild, last_reaction_audit.non_reactors
+        )
+    except discord.HTTPException as error:
+        print(f"Could not retrieve members for DM reminders: {error}")
+        await ctx.send("Could not retrieve members for DM reminders. Try again shortly.")
+        return
+
     sent_count = 0
     failed_names = []
     for member in members:
@@ -671,10 +679,15 @@ async def announce_today_birthdays() -> None:
         if not isinstance(channel, (discord.TextChannel, discord.Thread)):
             raise TypeError("The configured announcement channel is not a text channel.")
 
+        member_role = discord.utils.get(channel.guild.roles, name="Member")
+        if member_role is None:
+            raise ValueError("Could not find a Discord role named 'Member'.")
+
         for name in birthday_names:
             await channel.send(
-                f"Please wish {name} a happy birthday!!!! 🎈🎈🎉🎊 "
-                "https://klipy.com/gifs/birthday-geburtstag-1"
+                f"{member_role.mention} Please wish {name} a happy birthday!!!! 🎈🎈🎉🎊 "
+                "https://klipy.com/gifs/birthday-geburtstag-1",
+                allowed_mentions=discord.AllowedMentions(roles=[member_role]),
             )
         has_checked_birthdays = True
     except (
