@@ -671,15 +671,10 @@ async def announce_today_birthdays() -> None:
         if not isinstance(channel, (discord.TextChannel, discord.Thread)):
             raise TypeError("The configured announcement channel is not a text channel.")
 
-        member_role = discord.utils.get(channel.guild.roles, name="Member")
-        if member_role is None:
-            raise ValueError("Could not find a Discord role named 'Member'.")
-
         for name in birthday_names:
             await channel.send(
-                f"{member_role.mention} Please wish {name} a happy birthday!!!! 🎈🎈🎉🎊 "
-                "https://klipy.com/gifs/birthday-geburtstag-1",
-                allowed_mentions=discord.AllowedMentions(roles=[member_role]),
+                f"Please wish {name} a happy birthday!!!! 🎈🎈🎉🎊 "
+                "https://klipy.com/gifs/birthday-geburtstag-1"
             )
         has_checked_birthdays = True
     except (
