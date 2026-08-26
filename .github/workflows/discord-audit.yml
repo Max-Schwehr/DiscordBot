@@ -2,7 +2,9 @@ name: Discord audit window
 
 on:
   schedule:
-    # 8:00 PM Los Angeles during daylight saving time = 3:00 AM UTC
+    # Runs daily at 7:30 AM and 8:00 PM Los Angeles during daylight saving time.
+    # GitHub Actions schedules use UTC; these become 6:30 AM and 7:00 PM in winter.
+    - cron: "30 14 * * *"
     - cron: "0 3 * * *"
   workflow_dispatch:
 
