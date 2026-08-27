@@ -80,7 +80,7 @@ people = [
         "realName": "Liyah Ortega",
     },
     {
-        "discordName": "REPLACE_WITH_KELLYS_FULL_USERNAME",
+        "discordName": "shampooparacalvicie",
         "realName": "Kelly Tan Liu",
     },
     {
@@ -616,7 +616,9 @@ async def dm_them(ctx: commands.Context) -> None:
     for member in members:
         try:
             await member.send(
-                "Hi! Please react to this announcement when you can: "
+                "Hi! This is the Reaction Bot (also known as 🤖 Maestro Bot 🤖). "
+                "It has been more than 48 hours since this announcement was posted, "
+                "and you have not reacted. Please react to this announcement when you can:\n"
                 f"{last_reaction_audit.announcement_url}"
             )
             sent_count += 1
