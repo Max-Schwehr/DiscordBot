@@ -126,7 +126,8 @@ HELP_MESSAGE = (
     "a private DM to people who did not react.\n"
     "- If you're logging points for an after-school meeting, run "
     "`!syncmembers` to fill the Member Object column automatically.\n"
-    "- Birthday announcements are sent at 7:30 AM, when needed. "
+    "- Maestro Bot comes online daily at 7:30 AM, 4:45 PM, and 8:05 PM Pacific. "
+    "Birthday announcements are sent during the morning run, when needed. "
     "Birthdays are listed in the Members database in Notion."
 )
 
@@ -269,7 +270,7 @@ def notion_data_source_id(headers: dict[str, str], database_id: str) -> str:
 
 
 def birthday_names_today() -> list[str]:
-    """Return the names of Members rows with a Birthday date equal to today."""
+    """Return Members whose birthday month and day match today in Pacific time."""
     if not NOTION_MEMBERS_DATABASE_ID:
         raise ValueError("Set NOTION_MEMBERS_DATABASE_ID in .env.")
 
@@ -293,23 +294,35 @@ def birthday_names_today() -> list[str]:
     if len(title_keys) != 1:
         raise ValueError("The Members data source must have one title property.")
 
-    birthday_query_response = requests.post(
-        f"{NOTION_API_URL}/data_sources/{data_source_id}/query",
-        headers=headers,
-        json={
-            "filter": {
-                "property": birthday_key,
-                "date": {"equals": date.today().isoformat()},
-            },
-            "page_size": 100,
-        },
-        timeout=10,
-    )
-    birthday_query_response.raise_for_status()
-    return [
-        notion_text_value(page["properties"][title_keys[0]], "title")
-        for page in birthday_query_response.json()["results"]
-    ]
+    today = datetime.now(LOS_ANGELES_TIME_ZONE).date()
+    birthday_names = []
+    next_cursor = None
+    while True:
+        query = {"page_size": 100}
+        if next_cursor is not None:
+            query["start_cursor"] = next_cursor
+        birthday_query_response = requests.post(
+            f"{NOTION_API_URL}/data_sources/{data_source_id}/query",
+            headers=headers,
+            json=query,
+            timeout=10,
+        )
+        birthday_query_response.raise_for_status()
+        birthday_results = birthday_query_response.json()
+
+        for page in birthday_results["results"]:
+            birthday_value = page["properties"][birthday_key].get("date")
+            if birthday_value is None:
+                continue
+            birthday = date.fromisoformat(birthday_value["start"][:10])
+            if (birthday.month, birthday.day) == (today.month, today.day):
+                birthday_names.append(
+                    notion_text_value(page["properties"][title_keys[0]], "title")
+                )
+
+        if not birthday_results.get("has_more"):
+            return birthday_names
+        next_cursor = birthday_results["next_cursor"]
 
 
 def notion_text_value(property_value: dict, property_type: str) -> str:
@@ -686,8 +699,8 @@ async def announce_today_birthdays() -> None:
     """Post one birthday message for each Members row that matches today's date."""
     global has_checked_birthdays
 
-    # The external scheduler may start the bot twice daily; only the earlier run posts.
-    if has_checked_birthdays or datetime.now(LOS_ANGELES_TIME_ZONE).hour >= 17:
+    # Only the morning launch posts birthdays; later launches would duplicate them.
+    if has_checked_birthdays or datetime.now(LOS_ANGELES_TIME_ZONE).hour >= 12:
         return
 
     try:
