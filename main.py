@@ -296,33 +296,24 @@ def birthday_names_today() -> list[str]:
 
     today = datetime.now(LOS_ANGELES_TIME_ZONE).date()
     birthday_names = []
-    next_cursor = None
-    while True:
-        query = {"page_size": 100}
-        if next_cursor is not None:
-            query["start_cursor"] = next_cursor
-        birthday_query_response = requests.post(
-            f"{NOTION_API_URL}/data_sources/{data_source_id}/query",
-            headers=headers,
-            json=query,
-            timeout=10,
-        )
-        birthday_query_response.raise_for_status()
-        birthday_results = birthday_query_response.json()
+    birthday_query_response = requests.post(
+        f"{NOTION_API_URL}/data_sources/{data_source_id}/query",
+        headers=headers,
+        json={"page_size": 100},
+        timeout=10,
+    )
+    birthday_query_response.raise_for_status()
+    for page in birthday_query_response.json()["results"]:
+        birthday_value = page["properties"][birthday_key].get("date")
+        if birthday_value is None:
+            continue
+        birthday = date.fromisoformat(birthday_value["start"][:10])
+        if (birthday.month, birthday.day) == (today.month, today.day):
+            birthday_names.append(
+                notion_text_value(page["properties"][title_keys[0]], "title")
+            )
 
-        for page in birthday_results["results"]:
-            birthday_value = page["properties"][birthday_key].get("date")
-            if birthday_value is None:
-                continue
-            birthday = date.fromisoformat(birthday_value["start"][:10])
-            if (birthday.month, birthday.day) == (today.month, today.day):
-                birthday_names.append(
-                    notion_text_value(page["properties"][title_keys[0]], "title")
-                )
-
-        if not birthday_results.get("has_more"):
-            return birthday_names
-        next_cursor = birthday_results["next_cursor"]
+    return birthday_names
 
 
 def notion_text_value(property_value: dict, property_type: str) -> str:
