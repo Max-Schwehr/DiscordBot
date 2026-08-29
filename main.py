@@ -118,17 +118,30 @@ MESSAGE_LINK_PATTERN = re.compile(
     r"^https?://discord\.com/channels/(?:\d+|@me)/(\d+)/(\d+)/?$"
 )
 
+HELP_MESSAGE = (
+    "- To audit a message's reactions, use `!audit`, followed by a space and "
+    "a link to a Discord message in #announcements.\n"
+    "- After running `!audit`, use `!deduct` and/or `!dmthem` (beta). "
+    "`!deduct` adds point deductions in Notion, while `!dmthem` sends "
+    "a private DM to people who did not react.\n"
+    "- If you're logging points for an after-school meeting, run "
+    "`!syncmembers` to fill the Member Object column automatically.\n"
+    "- Birthday announcements are sent at 7:30 AM, when needed. "
+    "Birthdays are listed in the Members database in Notion."
+)
+
 intents = discord.Intents.default()
-# Required for Discord to deliver messages beginning with !audit to the bot.
+# Required for Discord to deliver prefixed commands to the bot.
 intents.message_content = True
 # Required to look up tracked members before sending reaction reminders.
 intents.members = True
-# Configure the command prefix and pass the intents required by discord.py.
-bot = commands.Bot(command_prefix="!", intents=intents)
+# Configure the prefix and replace discord.py's default help output with our own.
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 # Prevent duplicate ready messages after a temporary Discord reconnect.
 has_announced_ready = False
 # Prevent duplicate birthday announcements after a temporary Discord reconnect.
 has_checked_birthdays = False
+
 
 @dataclass(frozen=True)
 class ReactionAudit:
@@ -519,6 +532,15 @@ def sync_member_relations() -> tuple[int, int, list[str]]:
     return updated_count, skipped_count, unmatched_names
 
 
+@bot.command(name="help")
+async def show_help(ctx: commands.Context) -> None:
+    """Reply with instructions for every Maestro Bot command."""
+    if ctx.channel.id != AUDIT_CHANNEL_ID:
+        return
+
+    await ctx.send(HELP_MESSAGE)
+
+
 @bot.command()
 async def audit(ctx: commands.Context, message_link: str) -> None:
     """Reply with the tracked reaction status for a linked announcement message.
@@ -727,15 +749,7 @@ async def on_ready() -> None:
 
         await channel.send(
             "🤖 Maestro Bot 🤖 is ready!\n"
-            "- To audit a message's reactions, use `!audit`, followed by a space and "
-            "a link to a Discord message in #announcements.\n"
-            "- After running `!audit`, use `!deduct` and/or `!dmthem` (beta). "
-            "`!deduct` adds point deductions in Notion, while `!dmthem` sends "
-            "a private DM to people who did not react.\n"
-            "- If you're logging points for an after-school meeting, run "
-            "`!syncmembers` to fill the Member Object column automatically.\n"
-            "- Birthday announcements are sent at 7:30 AM, when needed. "
-            "Birthdays are listed in the Members database in Notion."
+            "Use `!help` to learn which commands to run."
         )
         has_announced_ready = True
     except (discord.DiscordException, TypeError) as error:

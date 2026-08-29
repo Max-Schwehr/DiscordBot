@@ -2,10 +2,14 @@ name: Discord audit window
 
 on:
   schedule:
-    # Runs daily at 7:30 AM and 8:00 PM Los Angeles during daylight saving time.
-    # GitHub Actions schedules use UTC; these become 6:30 AM and 7:00 PM in winter.
-    - cron: "30 14 * * *"
-    - cron: "0 3 * * *"
+    # Use Pacific time directly so daylight-saving changes do not shift the bot's schedule.
+    - cron: "30 7 * * *"
+      timezone: "America/Los_Angeles"
+    - cron: "45 16 * * *"
+      timezone: "America/Los_Angeles"
+    # Avoid the busy start of the hour, when GitHub may delay scheduled workflows.
+    - cron: "5 20 * * *"
+      timezone: "America/Los_Angeles"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +37,7 @@ jobs:
           NOTION_MEETING_DATABASE_ID: ${{ secrets.NOTION_MEETING_DATABASE_ID }}
           NOTION_MEMBERS_DATABASE_ID: ${{ secrets.NOTION_MEMBERS_DATABASE_ID }}
         run: |
+          set +e
           timeout 30m python main.py
           exit_code=$?
           if [ "$exit_code" -eq 124 ]; then exit 0; fi
