@@ -2,14 +2,15 @@ name: Discord audit window
 
 on:
   schedule:
-    # Use Pacific time directly so daylight-saving changes do not shift the bot's schedule.
-    - cron: "30 7 * * *"
-      timezone: "America/Los_Angeles"
-    - cron: "45 16 * * *"
-      timezone: "America/Los_Angeles"
-    # Avoid the busy start of the hour, when GitHub may delay scheduled workflows.
-    - cron: "5 20 * * *"
-      timezone: "America/Los_Angeles"
+    # 7:30 AM Pacific → 2:30 PM UTC
+    - cron: "30 14 * * *"
+
+    # 4:45 PM Pacific → 11:45 PM UTC
+    - cron: "45 23 * * *"
+
+    # 8:05 PM Pacific → 3:05 AM UTC the next day
+    - cron: "5 3 * * *"
+
   workflow_dispatch:
 
 permissions:
@@ -18,7 +19,7 @@ permissions:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 70
 
     steps:
       - uses: actions/checkout@v4
