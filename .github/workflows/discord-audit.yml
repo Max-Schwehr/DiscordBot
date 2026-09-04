@@ -19,7 +19,7 @@ permissions:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 130
 
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           NOTION_MEMBERS_DATABASE_ID: ${{ secrets.NOTION_MEMBERS_DATABASE_ID }}
         run: |
           set +e
-          timeout 30m python main.py
+          timeout 130m python main.py
           exit_code=$?
           if [ "$exit_code" -eq 124 ]; then exit 0; fi
           exit "$exit_code"
